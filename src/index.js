@@ -27,23 +27,28 @@ var ship;
 var targetX;
 var targetY;
 var background;
+var shipCoordinates;
 
 function preload ()
 {
     this.load.setBaseURL('http://localhost:8080');
+    this.load.tilemapTiledJSON('map', 'maps/infinite.json');
     this.load.image('back', 'background/back.png');
     this.load.image('warrior1', 'objects/ships/warrior1.png');
     this.load.image('smoke', 'objects/smokes/explosion00.png');
+    this.load.bitmapFont('nokia16', 'fonts/nokia16.png', 'fonts/nokia16.xml');
 }
 
 function create ()
 {
+    const map = this.make.tilemap({ key: 'map' });
+
     background = this.add.tileSprite(0, 0, config.width * 2, config.height * 2, 'back');
     background.setOrigin(0, 0);
     
     const particles = this.add.particles(0, 0, 'smoke', {
-      quantity: 9,
-      scale: { start: 0.0085, end: 0.001 },
+      quantity: 5,
+      scale: { start: 0.01, end: 0.001 },
     });
 
     ship = this.physics.add.sprite(400, 300, 'warrior1');
@@ -64,20 +69,18 @@ function create ()
         targetY = pointer.y;
     }, this);
 
-    // Set the camera to follow the ship
-    // this.cameras.main.startFollow(ship);
-
-    // Set the world bounds to be larger than the screen
-    this.physics.world.setBounds(0, 0, config.width * 4, config.height * 4);
-
-    // Allow the ship to wrap around the world edges
-    this.physics.world.wrap(ship, 0, true);
+    this.cameras.main.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
+    
 
     particles.startFollow(ship);
+
+    shipCoordinates = this.add.bitmapText(0, 0, 'nokia16').setScrollFactor(0);
 
 }
 
 function update() {
+  shipCoordinates.setText(`Ship Coordinates: ${ship.x.toFixed(0)} : ${ship.y.toFixed(0)}`);
+
   // Calculate the angle between the ship and the target
   if (targetX !== undefined && targetY !== undefined) {
     var angle = Phaser.Math.Angle.Between(ship.x, ship.y, targetX, targetY);
@@ -92,24 +95,20 @@ function update() {
 
     ship.setVelocity(Math.cos(angle) * speed, Math.sin(angle) * speed);
 
-    // Set the ship's angle to match the movement direction
-    ship.setAngle(Phaser.Math.RAD_TO_DEG * angle);
-
     // Stop when the ship is close to the target
-    if (Phaser.Math.Distance.Between(ship.x, ship.y, targetX, targetY) < 50) {
-      targetX = undefined;
-      targetY = undefined;
+    if (Phaser.Math.Distance.Between(ship.x, ship.y, targetX, targetY) < 10) {
+      ship.setVelocity(0, 0);
     }
   } else {
     // If there's no target, stop the ship
     ship.setVelocity(0, 0);
   }
 
-  // Calculate the offset for the background based on the camera position
+  // // Calculate the offset for the background based on the camera position
   var cameraOffsetX = ship.x;
   var cameraOffsetY = ship.y;
 
-  // Update the background position to create the illusion of an infinite map
+  // // Update the background position to create the illusion of an infinite map
   background.tilePositionX = cameraOffsetX * 5; // Adjust the factor as needed
   background.tilePositionY = cameraOffsetY * 5; // Adjust the factor as needed
 }
