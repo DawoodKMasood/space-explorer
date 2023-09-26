@@ -1,4 +1,7 @@
 import Phaser from 'phaser';
+import {playerShip, playerHealth, playerCoordinates} from './consts/currentPlayerVariable.js'
+import {addPlayer, addOtherPlayers} from './logics/player.js'
+import {mouseX, mouseY} from './consts/systemVariables.js'
 
 const config = {
   width: 800,
@@ -23,11 +26,7 @@ const config = {
 
 const game = new Phaser.Game(config);
 
-var ship;
-var targetX;
-var targetY;
-var background;
-var shipCoordinates;
+var backgrounds = [];
 
 function preload ()
 {
@@ -40,68 +39,102 @@ function preload ()
 
 function create ()
 {
-    background = this.add.tileSprite(0, 0, config.width * 2, config.height * 2, 'back');
-    background.setOrigin(0, 0);
-    
-    const particles = this.add.particles(0, 0, 'smoke', {
-      quantity: 5,
-      scale: { start: 0.01, end: 0.001 },
+    for (let i = 0; i < 4; i++) {
+      for (let j = 0; j < 4; j++) {
+        const background = this.add.image(i * 800, j * 600, 'back');
+        backgrounds.push(background);
+      }
+    }
+
+    var self = this;
+    this.socket = io();
+    this.otherPlayers = this.physics.add.group();
+
+    this.socket.on('currentPlayers', function (players) {
+      Object.keys(players).forEach(function (id) {
+        if (players[id].playerId === self.socket.id) {
+          addPlayer(self, players[id]);
+        } else {
+          addOtherPlayers(self, players[id]);
+        }
+      });
     });
 
-    ship = this.physics.add.sprite(400, 300, 'warrior1');
-    // Set the scale of the sprite
-    ship.setScale(0.1, 0.1);
-    // Enable input for the sprite so that it can interact with the mouse
-    ship.setInteractive();
+    this.socket.on('newPlayer', function (playerInfo) {
+      addOtherPlayers(self, playerInfo);
+    });
 
-    // Add a pointer move event to update the sprite's rotation
-    this.input.on('pointermove', function (pointer) {
-      // Calculate the angle between the sprite and the mouse pointer
-      var angle = Phaser.Math.Angle.Between(ship.x, ship.y, pointer.worldX, pointer.worldY);
-      // Convert radians to degrees and set the sprite's angle
-      ship.setAngle(Phaser.Math.RAD_TO_DEG * angle);
-
-      targetX = pointer.worldX;
-      targetY = pointer.worldY;
-    }, this);
-
-    // this.cameras.main.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
-    // Set the camera to follow the ship
-    this.cameras.main.startFollow(ship);
-
-    particles.startFollow(ship);
-
-    shipCoordinates = this.add.bitmapText(0, 0, 'nokia16').setScrollFactor(0);
+    this.socket.on('disconnect', function (playerId) {
+      self.otherPlayers.getChildren().forEach(function (otherPlayer) {
+        if (playerId === otherPlayer.playerId) {
+          otherPlayer.destroy();
+        }
+      });
+    });
     
+    this.socket.on('playerMoved', function (playerInfo) {
+      self.otherPlayers.getChildren().forEach(function (otherPlayer) {
+        if (playerInfo.playerId === otherPlayer.playerId) {
+          otherPlayer.setRotation(playerInfo.rotation);
+          otherPlayer.setPosition(playerInfo.x, playerInfo.y);
+        }
+      });
+    });
+
+    this.socket.on('playerDisconnected', function (playerInfo) {
+      self.otherPlayers.getChildren().forEach(function (otherPlayer) {
+        // Assuming playerInfo contains the ID of the disconnected player
+        if (otherPlayer.playerID === playerInfo.id) {
+          // Remove the disconnected player from the collection
+          self.otherPlayers.remove(otherPlayer, true, true);
+        }
+      });
+    });
+
+    playerCoordinates = this.add.bitmapText(10, 0, 'nokia16').setScrollFactor(0);
+    playerCoordinates.setDepth(1);
 }
 
 function update() {
-  shipCoordinates.setText(`Ship Coordinates: ${ship.x.toFixed(0)} : ${ship.y.toFixed(0)}`);
+
+  if ( playerShip !== undefined) {
+    // emit player movement
+    var x = playerShip.x;
+    var y = playerShip.y;
+    var r = playerShip.rotation;
+    if (playerShip.oldPosition && (x !== playerShip.oldPosition.x || y !== playerShip.oldPosition.y || r !== playerShip.oldPosition.rotation)) {
+      this.socket.emit('playerMovement', { x: playerShip.x, y: playerShip.y, rotation: playerShip.rotation });
+    }
+    // save old position data
+    playerShip.oldPosition = {
+      x: playerShip.x,
+      y: playerShip.y,
+      rotation: playerShip.rotation
+    };
+
+    playerCoordinates.setText(`Ship Coordinates: ${playerShip.x.toFixed(0)} : ${playerShip.y.toFixed(0)}`);
+  }
 
   // Calculate the angle between the ship and the target
-  if (targetX !== undefined && targetY !== undefined) {
-    var angle = Phaser.Math.Angle.Between(ship.x, ship.y, targetX, targetY);
+  if (mouseX !== undefined && mouseY !== undefined) {
+
+    var angle = Phaser.Math.Angle.Between(playerShip.x, playerShip.y, mouseX, mouseY);
 
     // Calculate the distance between the ship and the target
-    var distance = Phaser.Math.Distance.Between(ship.x, ship.y, targetX, targetY);
+    var distance = Phaser.Math.Distance.Between(playerShip.x, playerShip.y, mouseX, mouseY);
 
     // Calculate the ship's velocity based on the angle and speed
     // Adjust the speed based on distance, with a maximum speed of 200
     var maxSpeed = 200;
     var speed = Math.min(distance / 2, maxSpeed);
 
-    ship.setVelocity(Math.cos(angle) * speed, Math.sin(angle) * speed);
+    playerShip.setVelocity(Math.cos(angle) * speed, Math.sin(angle) * speed);
 
-    if (Phaser.Math.Distance.Between(ship.x, ship.y, targetX, targetY) < 20) {
-      targetX = undefined;
-      targetY = undefined;
+    if (Phaser.Math.Distance.Between(playerShip.x, playerShip.y, mouseX, mouseY) < 20) {
+      mouseX = undefined;
+      mouseY = undefined;
+      playerShip.setVelocity(0, 0)
     }
-  } else {
-    ship.setVelocity(0, 0)
   }
-
-  // // Update the background position to create the illusion of an infinite map
-  background.tilePositionX = ship.x * 2; // Adjust the factor as needed
-  background.tilePositionY = ship.y * 2; // Adjust the factor as needed
 }
 
