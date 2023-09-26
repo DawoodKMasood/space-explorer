@@ -1,7 +1,8 @@
 import Phaser from 'phaser';
-import {playerShip, playerHealth, playerCoordinates} from './consts/currentPlayerVariable.js'
-import {addPlayer, addOtherPlayers} from './logics/player.js'
+import {playerShip, playerHealth} from './consts/currentPlayerVariable.js'
+import {addPlayer, addOtherPlayers, updateHealthBar} from './logics/player.js'
 import {mouseX, mouseY} from './consts/systemVariables.js'
+import { healthBarGraphics, healthBarTextGraphics, playerCoordinatesTextGraphics } from './consts/gameVariables.js';
 
 const config = {
   width: 800,
@@ -39,6 +40,7 @@ function preload ()
 
 function create ()
 {
+
     for (let i = 0; i < 4; i++) {
       for (let j = 0; j < 4; j++) {
         const background = this.add.image(i * 800, j * 600, 'back');
@@ -91,8 +93,17 @@ function create ()
       });
     });
 
-    playerCoordinates = this.add.bitmapText(10, 0, 'nokia16').setScrollFactor(0);
-    playerCoordinates.setDepth(1);
+    // Create a health bar background
+    var healthBarBackground = this.add.graphics();
+    healthBarBackground.fillStyle(0xffffff, 0.5); // Black with 50% opacity
+    healthBarBackground.fillRect(10, 35, 160, 15);
+    healthBarBackground.setScrollFactor(0)
+
+    // Create the actual health bar that will change based on ship's health
+    healthBarGraphics = this.add.graphics();
+
+    playerCoordinatesTextGraphics = this.add.bitmapText(10, 10, 'nokia16').setScrollFactor(0).setDepth(2);
+    healthBarTextGraphics = this.add.bitmapText(180, 35, 'nokia16').setScrollFactor(0).setDepth(2);
 }
 
 function update() {
@@ -112,7 +123,9 @@ function update() {
       rotation: playerShip.rotation
     };
 
-    playerCoordinates.setText(`Ship Coordinates: ${playerShip.x.toFixed(0)} : ${playerShip.y.toFixed(0)}`);
+    updateHealthBar(healthBarGraphics, playerHealth);
+    healthBarTextGraphics.setText(`${playerHealth}%`);
+    playerCoordinatesTextGraphics.setText(`Ship Coordinates: ${playerShip.x.toFixed(0)} : ${playerShip.y.toFixed(0)}`);
   }
 
   // Calculate the angle between the ship and the target

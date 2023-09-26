@@ -51,9 +51,18 @@ function addOtherPlayers(self, playerInfo) {
     particles.startFollow(otherPlayer);
   
     self.otherPlayers.add(otherPlayer);
-  }
+}
+
+// Function to update the health bar
+function updateHealthBar(healthBar, health) {
+    healthBar.clear();
+    healthBar.fillStyle(0x00FF00, 1); // Green with full opacity
+    healthBar.fillRect(10, 35, (health / 100) * 160, 15); // Adjust width based on ship's health
+    healthBar.setScrollFactor(0)
+}
 
 export {
     addPlayer,
     addOtherPlayers,
+    updateHealthBar,
 }
