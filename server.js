@@ -32,11 +32,11 @@ io.on('connection', (socket) => {
   // create a new player and add it to our players object
   players[socket.id] = {
     health: 100,
+    fireRate: 200,
     rotation: 0,
     x: Math.floor(Math.random() * 400) + 50,
     y: Math.floor(Math.random() * 300) + 50,
     playerId: socket.id,
-    team: (Math.floor(Math.random() * 2) == 0) ? 'red' : 'blue'
   };
   // send the players object to the new player
   socket.emit('currentPlayers', players);
@@ -57,5 +57,9 @@ io.on('connection', (socket) => {
     players[socket.id].rotation = movementData.rotation;
     // emit a message to all players about the player that moved
     socket.broadcast.emit('playerMoved', players[socket.id]);
+  });
+
+  socket.on('bullet', function (bulletData) {
+    socket.broadcast.emit('bulletFired', bulletData);
   });
 });

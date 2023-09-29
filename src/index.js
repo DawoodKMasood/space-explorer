@@ -1,8 +1,10 @@
 import Phaser from 'phaser';
-import {playerShip, playerHealth} from './consts/currentPlayerVariable.js'
-import {addPlayer, addOtherPlayers, updateHealthBar} from './logics/player.js'
-import {mouseX, mouseY} from './consts/systemVariables.js'
-import { healthBarGraphics, healthBarTextGraphics, playerCoordinatesTextGraphics } from './consts/gameVariables.js';
+import { playerId, playerShip, playerHealth, fireRate } from './consts/currentPlayerVariable.js'
+import { otherPlayers } from './consts/otherPlayersVariable.js'
+import { addPlayer, addOtherPlayers, updateHealthBar } from './logics/player.js'
+import { mouseX, mouseY } from './consts/systemVariables.js'
+import { healthBarGraphics, healthBarTextGraphics, playerCoordinatesTextGraphics, bulletsGroup, isFiring } from './consts/gameVariables.js';
+import { Bullet } from './logics/bullet.js';
 
 const config = {
   width: 800,
@@ -31,26 +33,50 @@ var backgrounds = [];
 
 function preload ()
 {
-    this.load.setBaseURL('http://localhost:8080');
-    this.load.image('back', 'background/back.png');
-    this.load.image('warrior1', 'objects/ships/warrior1.png');
-    this.load.image('smoke', 'objects/smokes/explosion00.png');
-    this.load.bitmapFont('nokia16', 'fonts/nokia16.png', 'fonts/nokia16.xml');
+  this.load.spritesheet('bullet_spritesheet', 'objects/bullets/shot_spritesheet.png', { frameWidth: 32, frameHeight: 32, } );
+  this.load.spritesheet('bullet_explosion_spritesheet', 'objects/bullets/shot_explosion_spritesheet.png', { frameWidth: 32, frameHeight: 32, } );
+  
+  this.load.setBaseURL('http://localhost:8080');
+  this.load.image('back', 'background/back.png');
+  this.load.image('warrior1', 'objects/ships/warrior1.png');
+  this.load.image('smoke', 'objects/smokes/explosion00.png');
+
+  this.load.bitmapFont('nokia16', 'fonts/nokia16.png', 'fonts/nokia16.xml');
 }
 
 function create ()
 {
+    this.physics.world.setBounds(0, 0, 2048, 2048);
+    this.cameras.main.setBounds(0, 0, 2048, 2048);
+    bulletsGroup = this.physics.add.group();
+
+    // Create an animation for the bullet
+    this.anims.create({
+      key: 'bullet',
+      frames: 'bullet_spritesheet',
+      frameRate: 4, // Adjust the frame rate as needed
+      repeat: -1 // Set to -1 for infinite looping, or you can use a different number for a finite loop
+    });
+
+    // Create an animation for the bullet
+    this.anims.create({
+      key: 'bullet_explosion',
+      frames: 'bullet_explosion_spritesheet',
+      frameRate: 5, // Adjust the frame rate as needed
+      repeat: 1 // Set to -1 for infinite looping, or you can use a different number for a finite loop
+    });
 
     for (let i = 0; i < 4; i++) {
       for (let j = 0; j < 4; j++) {
         const background = this.add.image(i * 800, j * 600, 'back');
+        background.setDepth(0);
         backgrounds.push(background);
       }
     }
 
     var self = this;
     this.socket = io();
-    this.otherPlayers = this.physics.add.group();
+    otherPlayers = this.physics.add.group();
 
     this.socket.on('currentPlayers', function (players) {
       Object.keys(players).forEach(function (id) {
@@ -67,7 +93,7 @@ function create ()
     });
 
     this.socket.on('disconnect', function (playerId) {
-      self.otherPlayers.getChildren().forEach(function (otherPlayer) {
+      otherPlayers.getChildren().forEach(function (otherPlayer) {
         if (playerId === otherPlayer.playerId) {
           otherPlayer.destroy();
         }
@@ -75,7 +101,7 @@ function create ()
     });
     
     this.socket.on('playerMoved', function (playerInfo) {
-      self.otherPlayers.getChildren().forEach(function (otherPlayer) {
+      otherPlayers.getChildren().forEach(function (otherPlayer) {
         if (playerInfo.playerId === otherPlayer.playerId) {
           otherPlayer.setRotation(playerInfo.rotation);
           otherPlayer.setPosition(playerInfo.x, playerInfo.y);
@@ -83,12 +109,25 @@ function create ()
       });
     });
 
+    const sceneContext = this;
+    
+    this.socket.on('bulletFired', function (bulletInfo) {
+      // Create a bullet at the player's position
+      const bullet = new Bullet(sceneContext, bulletInfo.x, bulletInfo.y, bulletInfo.rotation, bulletInfo.bulletByPlayer);
+
+      // Set the bullet's rotation to match the player's rotation
+      bullet.setRotation(bulletInfo.rotation);
+
+      // Add the bullet to the bullets group
+      bulletsGroup.add(bullet);
+    });
+
     this.socket.on('playerDisconnected', function (playerInfo) {
-      self.otherPlayers.getChildren().forEach(function (otherPlayer) {
+      otherPlayers.getChildren().forEach(function (otherPlayer) {
         // Assuming playerInfo contains the ID of the disconnected player
         if (otherPlayer.playerID === playerInfo.id) {
           // Remove the disconnected player from the collection
-          self.otherPlayers.remove(otherPlayer, true, true);
+          otherPlayers.remove(otherPlayer, true, true);
         }
       });
     });
@@ -96,17 +135,59 @@ function create ()
     // Create a health bar background
     var healthBarBackground = this.add.graphics();
     healthBarBackground.fillStyle(0xffffff, 0.5); // Black with 50% opacity
-    healthBarBackground.fillRect(10, 35, 160, 15);
+    healthBarBackground.fillRect(10, 35, 170, 15);
     healthBarBackground.setScrollFactor(0)
 
     // Create the actual health bar that will change based on ship's health
     healthBarGraphics = this.add.graphics();
 
     playerCoordinatesTextGraphics = this.add.bitmapText(10, 10, 'nokia16').setScrollFactor(0).setDepth(2);
-    healthBarTextGraphics = this.add.bitmapText(180, 35, 'nokia16').setScrollFactor(0).setDepth(2);
+    healthBarTextGraphics = this.add.bitmapText(190, 35, 'nokia16').setScrollFactor(0).setDepth(2);
 }
 
 function update() {
+
+  // Check if the left mouse button is down
+  if (this.input.activePointer.leftButtonDown()) {
+    // If not already firing, start firing
+    if (!isFiring) {
+      isFiring = true;
+      this.lastFired = 0; // Reset the lastFired timestamp to allow immediate firing
+    }
+  } else {
+    // If the left mouse button is released, stop firing
+    isFiring = false;
+  }
+
+  
+
+  if (isFiring) {
+    // Check if enough time has passed since the last shot
+    if (!this.lastFired || this.time.now - this.lastFired >= fireRate) {
+      // Create a bullet at the player's position
+      const bullet = new Bullet(this, playerShip.x, playerShip.y, playerShip.rotation, playerId);
+
+      // Set the bullet's rotation to match the player's rotation
+      bullet.setRotation(playerShip.rotation);
+
+      // Add the bullet to the bullets group
+      bulletsGroup.add(bullet);
+
+      // Update the last fired timestamp
+      this.lastFired = this.time.now;
+
+      this.socket.emit('bullet', { x: playerShip.x, y: playerShip.y, bulletByPlayer: playerId, rotation: playerShip.rotation });
+    }
+  }
+
+  if (bulletsGroup) {
+    // Update bullet logic
+    bulletsGroup.children.iterate((bullet) => {
+      if (bullet) {
+        bullet.update();
+      } 
+    });
+  }
 
   if ( playerShip !== undefined) {
     // emit player movement
