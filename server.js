@@ -32,7 +32,7 @@ io.on('connection', (socket) => {
   // create a new player and add it to our players object
   players[socket.id] = {
     health: 100,
-    fireRate: 200,
+    fireRate: 300,
     rotation: 0,
     x: Math.floor(Math.random() * 4096),
     y: Math.floor(Math.random() * 4096),

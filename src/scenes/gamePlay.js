@@ -6,6 +6,7 @@ import { healthBarGraphics, healthBarTextGraphics, playerNameTextGraphics, playe
 import { Bullet } from '../logics/bullet.js';
 import { BulletMaxDistancePerk } from '../logics/bulletMaxDistancePerk.js';
 import { FiringSpeedPerk } from '../logics/firingSpeedPerk.js';
+import { MiniMapScene } from '../scenes/miniMap.js'
 
 const backgrounds = [];
 
@@ -37,6 +38,7 @@ class GamePlayScene extends Phaser.Scene {
     bulletsGroup = this.physics.add.group();
     this.bulletMaxDistanceItemsGroup = this.physics.add.group();
     this.firingSpeedPerkItemsGroup = this.physics.add.group();
+    this.miniMapInitialised = false;
 
     // Create animations
     const createAnimation = (key, spritesheet, frameRate, repeat) => {
@@ -154,8 +156,8 @@ class GamePlayScene extends Phaser.Scene {
     // Function to spawn perk items randomly
     spawnBulletMaxDistancePerkItem() {
         if (this.bulletMaxDistanceItemsGroup.countActive() < 1) {
-            const x = Phaser.Math.Between(0, 4096);
-            const y = Phaser.Math.Between(0, 4096);
+            const x = Phaser.Math.Between(100, 4000);
+            const y = Phaser.Math.Between(100, 4000);
             const item = new BulletMaxDistancePerk(this, x, y, 'bullet_max_distance_perk', playerShip);
             this.bulletMaxDistanceItemsGroup.add(item);
         }
@@ -164,8 +166,8 @@ class GamePlayScene extends Phaser.Scene {
     // Function to spawn firing speed perk items randomly
     spawnFiringSpeedPerkItem() {
         if (this.firingSpeedPerkItemsGroup.countActive() < 1) {
-            const x = Phaser.Math.Between(0, 4096);
-            const y = Phaser.Math.Between(0, 4096);
+            const x = Phaser.Math.Between(100, 4000);
+            const y = Phaser.Math.Between(100, 4000);
             const item = new FiringSpeedPerk(this, x, y, 'bullet_firing_speed_perk', playerShip);
             this.firingSpeedPerkItemsGroup.add(item);
         }
@@ -196,6 +198,7 @@ class GamePlayScene extends Phaser.Scene {
           explosion.destroy();
           this.scene.start('GameOverScene');
           this.scene.stop();
+          this.scene.remove('MiniMapScene');
         });
 
         playerShip.isExploding = true;
@@ -264,6 +267,11 @@ class GamePlayScene extends Phaser.Scene {
         mouseY = undefined;
         playerShip.setVelocity(0, 0);
       }
+    }
+
+    if (playerShip && !this.miniMapInitialised && !playerShip.isExploding) {
+        this.miniMapInitialised = true;
+        this.scene.add('MiniMapScene', MiniMapScene, true);
     }
 
   }
