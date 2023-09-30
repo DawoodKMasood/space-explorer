@@ -49,7 +49,11 @@ class Bullet extends Phaser.Physics.Arcade.Sprite {
         this.traveledDistance = Math.sqrt(deltaX ** 2 + deltaY ** 2);
 
         if (this.bulletByPlayer !== playerId && this.scene.physics.overlap(this, playerShip)) {
-            playerHealth -= this.damage;
+            if (playerHealth - this.damage <= 0) {
+                playerHealth = 0
+            } else {
+                playerHealth -= this.damage;
+            }
             this.handleExplosion();
             this.destroy();
         }

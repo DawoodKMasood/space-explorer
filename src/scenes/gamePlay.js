@@ -2,7 +2,7 @@ import { playerId, playerShip, playerHealth, fireRate } from '../consts/currentP
 import { otherPlayers } from '../consts/otherPlayersVariable.js';
 import { addPlayer, addOtherPlayers, updateHealthBar } from '../logics/player.js';
 import { mouseX, mouseY } from '../consts/systemVariables.js';
-import { healthBarGraphics, healthBarTextGraphics, playerCoordinatesTextGraphics, bulletsGroup, isFiring } from '../consts/gameVariables.js';
+import { healthBarGraphics, healthBarTextGraphics, playerNameTextGraphics, playerCoordinatesTextGraphics, bulletsGroup, isFiring } from '../consts/gameVariables.js';
 import { Bullet } from '../logics/bullet.js';
 
 const backgrounds = [];
@@ -111,8 +111,23 @@ class GamePlayScene extends Phaser.Scene {
     // Create the actual health bar
     healthBarGraphics = this.add.graphics();
 
+    playerNameTextGraphics = this.add.text(0, 0, "Username").setFontSize(10);
     playerCoordinatesTextGraphics = this.add.bitmapText(10, 10, 'nokia16').setScrollFactor(0).setDepth(2);
     healthBarTextGraphics = this.add.bitmapText(190, 35, 'nokia16').setScrollFactor(0).setDepth(2);
+
+    // Start a timer to regenerate player health every second
+    this.time.addEvent({
+        delay: 1000, // 1000 milliseconds = 1 second
+        callback: this.regenerateHealth,
+        callbackScope: this,
+        loop: true, // Repeat the timer indefinitely
+    });
+  }
+
+  regenerateHealth() {
+    if (playerHealth < 100) { // Assuming the player's maximum health is 100
+      playerHealth += 1; // Increase the player's health by 1
+    }
   }
 
   update() {
@@ -175,6 +190,7 @@ class GamePlayScene extends Phaser.Scene {
       playerShip.oldPosition = { x, y, rotation: r };
 
       updateHealthBar(healthBarGraphics, playerHealth);
+      playerNameTextGraphics.setText(playerId).setPosition(playerShip.x - 55, playerShip.y + 30);
       healthBarTextGraphics.setText(`${playerHealth}%`);
       playerCoordinatesTextGraphics.setText(`Ship Coordinates: ${x.toFixed(0)} : ${y.toFixed(0)}`);
     }

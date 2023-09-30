@@ -54,7 +54,7 @@ function addPlayer(self, playerInfo) {
 }
 
 function addOtherPlayers(self, playerInfo) {
-    const otherPlayer = self.physics.add.image(playerInfo.x, playerInfo.y, 'warrior1').setScale(0.15, 0.15).setDepth(1);
+    const otherPlayer = self.physics.add.sprite(playerInfo.x, playerInfo.y, 'warrior1').setScale(0.15, 0.15).setDepth(1);
     otherPlayer.playerId = playerInfo.playerId;
     
     const particles = self.add.particles(0, 0, 'smoke', {
@@ -65,7 +65,6 @@ function addOtherPlayers(self, playerInfo) {
       scale: { start: 0.03, end: 0.0005 },
     });
     particles.startFollow(otherPlayer);
-  
     otherPlayers.add(otherPlayer);
 }
 
