@@ -4,20 +4,18 @@ import {mouseX, mouseY} from '../consts/systemVariables.js'
 import { isFiring } from '../consts/gameVariables.js'
 
 function addPlayer(self, playerInfo) {
-    playerShip = self.physics.add.image(playerInfo.x, playerInfo.y, 'warrior1').setScale(0.15, 0.15).setDepth(1);
+    playerShip = self.physics.add.sprite(playerInfo.x, playerInfo.y, 'warrior1').setScale(0.15, 0.15).setDepth(1);
     // Enable input for the sprite so that it can interact with the mouse
     playerShip.setInteractive();
     
     playerId = playerInfo.playerId;
     playerHealth = playerInfo.health;
     fireRate = playerInfo.fireRate;
+    playerShip.bonusBulletDistance = 0;
   
     const particles = self.add.particles(0, 0, 'smoke', {
       speed: {
         onEmit: (particle, key, t, value) => 10
-      },
-      lifespan: {
-        onEmit: (particle, key, t, value) => Phaser.Math.Percent(playerShip.body.speed, 0, 300) * 2000
       },
       blendMode: 'ADD',
       scale: { start: 0.03, end: 0.0003 },

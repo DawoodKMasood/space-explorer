@@ -6,14 +6,14 @@ const BULLET_DAMAGE = 10;
 const BULLET_MAX_DISTANCE = 300;
 
 class Bullet extends Phaser.Physics.Arcade.Sprite {
-    constructor(scene, x, y, rotation, bulletByPlayer) {
+    constructor(scene, x, y, rotation, bulletByPlayer, bonusBulletDistance) {
         super(scene, x, y, 'bullet'); // 'bulletAnimation' is the animation key
         scene.add.existing(this);
         scene.physics.world.enable(this);
 
         this.speed = BULLET_SPEED;
         this.damage = BULLET_DAMAGE;
-        this.maxDistance = BULLET_MAX_DISTANCE;
+        this.maxDistance = BULLET_MAX_DISTANCE + (bonusBulletDistance ? (bonusBulletDistance ? bonusBulletDistance : 0) : (playerShip.bonusBulletDistance ? playerShip.bonusBulletDistance : 0));
         this.initialX = x; // Store the initial X position
         this.initialY = y; // Store the initial Y position
         this.bulletByPlayer = bulletByPlayer;

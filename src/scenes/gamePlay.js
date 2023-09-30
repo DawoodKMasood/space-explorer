@@ -4,6 +4,7 @@ import { addPlayer, addOtherPlayers, updateHealthBar } from '../logics/player.js
 import { mouseX, mouseY } from '../consts/systemVariables.js';
 import { healthBarGraphics, healthBarTextGraphics, playerNameTextGraphics, playerCoordinatesTextGraphics, bulletsGroup, isFiring } from '../consts/gameVariables.js';
 import { Bullet } from '../logics/bullet.js';
+import { BulletMaxDistancePerk } from '../logics/bulletMaxDistancePerk.js';
 
 const backgrounds = [];
 
@@ -22,14 +23,17 @@ class GamePlayScene extends Phaser.Scene {
     this.load.image('back', 'background/back.png');
     this.load.image('warrior1', 'objects/ships/warrior1.png');
     this.load.image('smoke', 'objects/smokes/explosion00.png');
+    this.load.image('bullet_max_distance_perk', 'objects/skills/Skillicon1_02.png');
 
     this.load.bitmapFont('nokia16', 'fonts/nokia16.png', 'fonts/nokia16.xml');
   }
 
   create() {
-    this.physics.world.setBounds(0, 0, 2048, 2048);
-    this.cameras.main.setBounds(0, 0, 2048, 2048);
+
+    this.physics.world.setBounds(0, 0, 4096, 4096);
+    this.cameras.main.setBounds(0, 0, 4096, 4096);
     bulletsGroup = this.physics.add.group();
+    this.bulletMaxDistanceItemsGroup = this.physics.add.group();
 
     // Create animations
     const createAnimation = (key, spritesheet, frameRate, repeat) => {
@@ -45,9 +49,9 @@ class GamePlayScene extends Phaser.Scene {
     createAnimation('bullet_explosion', 'bullet_explosion_spritesheet', 5, 1);
     createAnimation('explosion', 'explosion_spritesheet', 11, 1);
 
-    for (let i = 0; i < 4; i++) {
-      for (let j = 0; j < 4; j++) {
-        const background = this.add.image(i * 800, j * 600, 'back').setDepth(0);
+    for (let i = 0; i < 5; i++) {
+      for (let j = 0; j < 5; j++) {
+        const background = this.add.image(i * 1024, j * 1024, 'back').setDepth(0);
         backgrounds.push(background);
       }
     }
@@ -89,7 +93,7 @@ class GamePlayScene extends Phaser.Scene {
     const sceneContext = this;
 
     this.socket.on('bulletFired', (bulletInfo) => {
-      const bullet = new Bullet(sceneContext, bulletInfo.x, bulletInfo.y, bulletInfo.rotation, bulletInfo.bulletByPlayer);
+      const bullet = new Bullet(sceneContext, bulletInfo.x, bulletInfo.y, bulletInfo.rotation, bulletInfo.bulletByPlayer, bulletInfo.bonusBulletDistance);
       bullet.setRotation(bulletInfo.rotation);
       bulletsGroup.add(bullet);
     });
@@ -122,13 +126,38 @@ class GamePlayScene extends Phaser.Scene {
         callbackScope: this,
         loop: true, // Repeat the timer indefinitely
     });
+
+    // Start a timer to regenerate player health every second
+    this.time.addEvent({
+        delay: 5000, // 1000 milliseconds = 1 second
+        callback: this.spawnBulletMaxDistancePerkItem,
+        callbackScope: this,
+        loop: true, // Repeat the timer indefinitely
+    });
   }
 
-  regenerateHealth() {
-    if (playerHealth < 100) { // Assuming the player's maximum health is 100
-      playerHealth += 1; // Increase the player's health by 1
+    regenerateHealth() {
+        if (playerHealth < 100) { // Assuming the player's maximum health is 100
+        playerHealth += 1; // Increase the player's health by 1
+        }
     }
-  }
+
+    // Function to spawn perk items randomly
+    spawnBulletMaxDistancePerkItem() {
+        if (this.bulletMaxDistanceItemsGroup.countActive() < 20) {
+            const x = Phaser.Math.Between(0, 4096);
+            const y = Phaser.Math.Between(0, 4096);
+            const item = new BulletMaxDistancePerk(this, x, y, 'bullet_max_distance_perk', playerShip);
+            this.bulletMaxDistanceItemsGroup.add(item);
+        }
+    }
+
+    // Callback function to handle perk item collection
+    collectBulletMaxDistanceItem(player, perkItem) {
+        if (player.bonusBulletDistance <= 300) {
+            perkItem.collect();
+        }
+    }
 
   update() {
     if (playerShip && playerHealth <= 0) {
@@ -146,13 +175,13 @@ class GamePlayScene extends Phaser.Scene {
         playerShip.isExploding = true;
         playerShip.setVelocity(0, 0);
         isFiring = false;
-        playerShip.setVisible(false);
+        playerShip.destroy();
 
         this.socket.disconnect();
       }
     }
 
-    if (this.input.activePointer.leftButtonDown() && playerHealth > 0) {
+    if (this.input.activePointer.leftButtonDown() && playerHealth > 0 && !playerShip.isExploding) {
       if (!isFiring) {
         isFiring = true;
         this.lastFired = 0;
@@ -161,13 +190,13 @@ class GamePlayScene extends Phaser.Scene {
       isFiring = false;
     }
 
-    if (isFiring) {
+    if (isFiring && !playerShip.isExploding) {
       if (!this.lastFired || this.time.now - this.lastFired >= fireRate) {
         const bullet = new Bullet(this, playerShip.x, playerShip.y, playerShip.rotation, playerId);
         bullet.setRotation(playerShip.rotation);
         bulletsGroup.add(bullet);
         this.lastFired = this.time.now;
-        this.socket.emit('bullet', { x: playerShip.x, y: playerShip.y, bulletByPlayer: playerId, rotation: playerShip.rotation });
+        this.socket.emit('bullet', { x: playerShip.x, y: playerShip.y, bulletByPlayer: playerId, rotation: playerShip.rotation, bonusBulletDistance: playerShip.bonusBulletDistance });
       }
     }
 
@@ -179,7 +208,7 @@ class GamePlayScene extends Phaser.Scene {
       });
     }
 
-    if (playerShip !== undefined) {
+    if (playerShip !== undefined && !playerShip.isExploding) {
       const x = playerShip.x;
       const y = playerShip.y;
       const r = playerShip.rotation;
@@ -193,9 +222,10 @@ class GamePlayScene extends Phaser.Scene {
       playerNameTextGraphics.setText(playerId).setPosition(playerShip.x - 55, playerShip.y + 30);
       healthBarTextGraphics.setText(`${playerHealth}%`);
       playerCoordinatesTextGraphics.setText(`Ship Coordinates: ${x.toFixed(0)} : ${y.toFixed(0)}`);
+      this.physics.overlap(playerShip, this.bulletMaxDistanceItemsGroup, this.collectBulletMaxDistanceItem, null, this);
     }
 
-    if (mouseX !== undefined && mouseY !== undefined && playerHealth > 0) {
+    if (playerShip && !playerShip.isExploding && mouseX !== undefined && mouseY !== undefined && playerHealth > 0) {
       const angle = Phaser.Math.Angle.Between(playerShip.x, playerShip.y, mouseX, mouseY);
       const distance = Phaser.Math.Distance.Between(playerShip.x, playerShip.y, mouseX, mouseY);
       const maxSpeed = 200;
@@ -208,6 +238,7 @@ class GamePlayScene extends Phaser.Scene {
         playerShip.setVelocity(0, 0);
       }
     }
+
   }
 }
 

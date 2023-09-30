@@ -9,6 +9,10 @@ const config = {
   audio: {
     disableWebAudio: true
   },
+  scale: {
+    mode: Phaser.Scale.RESIZE, // you can find another types in Phaser.Scale.ScaleModeType: RESIZE | FIT | ENVELOP ...
+    autoCenter: Phaser.Scale.CENTER_BOTH,
+  },
   scene: [ GamePlayScene, GameOverScene ],
   physics: {
     default: 'arcade',
