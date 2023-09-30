@@ -12,6 +12,7 @@ function addPlayer(self, playerInfo) {
     playerHealth = playerInfo.health;
     fireRate = playerInfo.fireRate;
     playerShip.bonusBulletDistance = 0;
+    playerShip.bonusFiringSpeed = 1;
   
     const particles = self.add.particles(0, 0, 'smoke', {
       speed: {

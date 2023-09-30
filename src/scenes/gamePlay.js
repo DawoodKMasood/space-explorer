@@ -5,6 +5,7 @@ import { mouseX, mouseY } from '../consts/systemVariables.js';
 import { healthBarGraphics, healthBarTextGraphics, playerNameTextGraphics, playerCoordinatesTextGraphics, bulletsGroup, isFiring } from '../consts/gameVariables.js';
 import { Bullet } from '../logics/bullet.js';
 import { BulletMaxDistancePerk } from '../logics/bulletMaxDistancePerk.js';
+import { FiringSpeedPerk } from '../logics/firingSpeedPerk.js';
 
 const backgrounds = [];
 
@@ -24,6 +25,7 @@ class GamePlayScene extends Phaser.Scene {
     this.load.image('warrior1', 'objects/ships/warrior1.png');
     this.load.image('smoke', 'objects/smokes/explosion00.png');
     this.load.image('bullet_max_distance_perk', 'objects/skills/Skillicon1_02.png');
+    this.load.image('bullet_firing_speed_perk', 'objects/skills/Skillicon1_22.png');
 
     this.load.bitmapFont('nokia16', 'fonts/nokia16.png', 'fonts/nokia16.xml');
   }
@@ -34,6 +36,7 @@ class GamePlayScene extends Phaser.Scene {
     this.cameras.main.setBounds(0, 0, 4096, 4096);
     bulletsGroup = this.physics.add.group();
     this.bulletMaxDistanceItemsGroup = this.physics.add.group();
+    this.firingSpeedPerkItemsGroup = this.physics.add.group();
 
     // Create animations
     const createAnimation = (key, spritesheet, frameRate, repeat) => {
@@ -127,10 +130,16 @@ class GamePlayScene extends Phaser.Scene {
         loop: true, // Repeat the timer indefinitely
     });
 
-    // Start a timer to regenerate player health every second
     this.time.addEvent({
-        delay: 5000, // 1000 milliseconds = 1 second
+        delay: 10000, // 10000 milliseconds
         callback: this.spawnBulletMaxDistancePerkItem,
+        callbackScope: this,
+        loop: true, // Repeat the timer indefinitely
+    });
+
+    this.time.addEvent({
+        delay: 10000, // 10000 milliseconds
+        callback: this.spawnFiringSpeedPerkItem,
         callbackScope: this,
         loop: true, // Repeat the timer indefinitely
     });
@@ -144,7 +153,7 @@ class GamePlayScene extends Phaser.Scene {
 
     // Function to spawn perk items randomly
     spawnBulletMaxDistancePerkItem() {
-        if (this.bulletMaxDistanceItemsGroup.countActive() < 20) {
+        if (this.bulletMaxDistanceItemsGroup.countActive() < 1) {
             const x = Phaser.Math.Between(0, 4096);
             const y = Phaser.Math.Between(0, 4096);
             const item = new BulletMaxDistancePerk(this, x, y, 'bullet_max_distance_perk', playerShip);
@@ -152,9 +161,26 @@ class GamePlayScene extends Phaser.Scene {
         }
     }
 
+    // Function to spawn firing speed perk items randomly
+    spawnFiringSpeedPerkItem() {
+        if (this.firingSpeedPerkItemsGroup.countActive() < 1) {
+            const x = Phaser.Math.Between(0, 4096);
+            const y = Phaser.Math.Between(0, 4096);
+            const item = new FiringSpeedPerk(this, x, y, 'bullet_firing_speed_perk', playerShip);
+            this.firingSpeedPerkItemsGroup.add(item);
+        }
+    }
+
     // Callback function to handle perk item collection
     collectBulletMaxDistanceItem(player, perkItem) {
         if (player.bonusBulletDistance <= 300) {
+            perkItem.collect();
+        }
+    }
+
+    // Callback function to handle firing speed perk item collection
+    collectFiringSpeedItem(player, perkItem) {
+        if (player.bonusFiringSpeed <= 3) { // Define MAX_FIRING_SPEED as the maximum firing speed value
             perkItem.collect();
         }
     }
@@ -191,7 +217,7 @@ class GamePlayScene extends Phaser.Scene {
     }
 
     if (isFiring && !playerShip.isExploding) {
-      if (!this.lastFired || this.time.now - this.lastFired >= fireRate) {
+      if (!this.lastFired || this.time.now - this.lastFired >= (fireRate / playerShip.bonusFiringSpeed)) {
         const bullet = new Bullet(this, playerShip.x, playerShip.y, playerShip.rotation, playerId);
         bullet.setRotation(playerShip.rotation);
         bulletsGroup.add(bullet);
@@ -223,6 +249,7 @@ class GamePlayScene extends Phaser.Scene {
       healthBarTextGraphics.setText(`${playerHealth}%`);
       playerCoordinatesTextGraphics.setText(`Ship Coordinates: ${x.toFixed(0)} : ${y.toFixed(0)}`);
       this.physics.overlap(playerShip, this.bulletMaxDistanceItemsGroup, this.collectBulletMaxDistanceItem, null, this);
+      this.physics.overlap(playerShip, this.firingSpeedPerkItemsGroup, this.collectFiringSpeedItem, null, this);
     }
 
     if (playerShip && !playerShip.isExploding && mouseX !== undefined && mouseY !== undefined && playerHealth > 0) {

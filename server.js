@@ -34,8 +34,8 @@ io.on('connection', (socket) => {
     health: 100,
     fireRate: 200,
     rotation: 0,
-    x: Math.floor(Math.random() * 400) + 50,
-    y: Math.floor(Math.random() * 300) + 50,
+    x: Math.floor(Math.random() * 4096),
+    y: Math.floor(Math.random() * 4096),
     playerId: socket.id,
   };
   // send the players object to the new player
