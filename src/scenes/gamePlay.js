@@ -7,8 +7,10 @@ import { Bullet } from '../logics/bullet.js';
 import { BulletMaxDistancePerk } from '../logics/bulletMaxDistancePerk.js';
 import { FiringSpeedPerk } from '../logics/firingSpeedPerk.js';
 import { MiniMapScene } from '../scenes/miniMap.js'
+import { Asteroid } from '../logics/asteroid.js'
 
 const backgrounds = [];
+const asteroids = [];
 
 class GamePlayScene extends Phaser.Scene {
   constructor() {
@@ -20,6 +22,7 @@ class GamePlayScene extends Phaser.Scene {
     this.load.spritesheet('bullet_spritesheet', 'objects/bullets/shot_spritesheet.png', { frameWidth: 32, frameHeight: 32 });
     this.load.spritesheet('bullet_explosion_spritesheet', 'objects/bullets/shot_explosion_spritesheet.png', { frameWidth: 32, frameHeight: 32 });
     this.load.spritesheet('explosion_spritesheet', 'objects/explosion/explosion_spritesheet.png', { frameWidth: 32, frameHeight: 32 });
+    this.load.spritesheet('asteroid_explode', 'objects/asteroids/asteroid_explode.png', { frameWidth: 109.714, frameHeight: 96 });
 
     this.load.setBaseURL('http://localhost:8080');
     this.load.image('back', 'background/back.png');
@@ -27,6 +30,8 @@ class GamePlayScene extends Phaser.Scene {
     this.load.image('smoke', 'objects/smokes/explosion00.png');
     this.load.image('bullet_max_distance_perk', 'objects/skills/Skillicon1_02.png');
     this.load.image('bullet_firing_speed_perk', 'objects/skills/Skillicon1_22.png');
+    this.load.image('asteroid_1', 'objects/asteroids/asteroid_1.png');
+    this.load.image('asteroid_2', 'objects/asteroids/asteroid_2.png');
 
     this.load.bitmapFont('nokia16', 'fonts/nokia16.png', 'fonts/nokia16.xml');
   }
@@ -53,6 +58,7 @@ class GamePlayScene extends Phaser.Scene {
     createAnimation('bullet', 'bullet_spritesheet', 4, -1);
     createAnimation('bullet_explosion', 'bullet_explosion_spritesheet', 5, 1);
     createAnimation('explosion', 'explosion_spritesheet', 11, 1);
+    createAnimation('asteroid_explosion', 'asteroid_explode', 11, 0);
 
     for (let i = 0; i < 5; i++) {
       for (let j = 0; j < 5; j++) {
@@ -111,6 +117,11 @@ class GamePlayScene extends Phaser.Scene {
       });
     });
 
+    this.socket.on('asteroidCreated', (asteroidData) => {
+      const asteroid = new Asteroid(this, asteroidData.x, asteroidData.y, asteroidData.type, asteroidData.direction);
+      asteroids.push(asteroid);
+    });
+
     // Create a health bar background
     const healthBarBackground = this.add.graphics();
     healthBarBackground.fillStyle(0xffffff, 0.5);
@@ -145,7 +156,15 @@ class GamePlayScene extends Phaser.Scene {
         callbackScope: this,
         loop: true, // Repeat the timer indefinitely
     });
+
+    this.physics.add.overlap(bulletsGroup, asteroids, this.bulletAsteroidCollision, null, this);
   }
+
+    // Create a function to handle bullet-asteroid collisions
+    bulletAsteroidCollision(asteroid, bullet) {
+      bullet.destroy();
+      asteroid.takeDamage(10); // Adjust the damage value as needed
+    }
 
     regenerateHealth() {
         if (playerHealth < 100) { // Assuming the player's maximum health is 100
@@ -237,6 +256,14 @@ class GamePlayScene extends Phaser.Scene {
       });
     }
 
+    if (asteroids) {
+      asteroids.map((asteroid) => {
+        if (asteroid) {
+          asteroid.update();
+        }
+      });
+    }
+
     if (playerShip !== undefined && !playerShip.isExploding) {
       const x = playerShip.x;
       const y = playerShip.y;
@@ -253,6 +280,12 @@ class GamePlayScene extends Phaser.Scene {
       playerCoordinatesTextGraphics.setText(`Ship Coordinates: ${x.toFixed(0)} : ${y.toFixed(0)}`);
       this.physics.overlap(playerShip, this.bulletMaxDistanceItemsGroup, this.collectBulletMaxDistanceItem, null, this);
       this.physics.overlap(playerShip, this.firingSpeedPerkItemsGroup, this.collectFiringSpeedItem, null, this);
+      this.events.on('asteroidDestroyed', (asteroid) => {
+        const index = asteroids.indexOf(asteroid);
+        if (index !== -1) {
+            asteroids.splice(index, 1);
+        }
+      });
     }
 
     if (playerShip && !playerShip.isExploding && mouseX !== undefined && mouseY !== undefined && playerHealth > 0) {
