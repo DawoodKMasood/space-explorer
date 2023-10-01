@@ -1,5 +1,5 @@
 
-# Space Explorer Multiplayer
+# Space Explorer
 
 ## Overview
 
