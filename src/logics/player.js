@@ -4,7 +4,7 @@ import {mouseX, mouseY} from '../consts/systemVariables.js'
 import { isFiring } from '../consts/gameVariables.js'
 
 function addPlayer(self, playerInfo) {
-    playerShip = self.physics.add.sprite(playerInfo.x, playerInfo.y, 'warrior1').setScale(0.15, 0.15).setDepth(1);
+    playerShip = self.physics.add.sprite(playerInfo.x, playerInfo.y, 'warrior1').setScale(0.15, 0.15).setDepth(3);
     // Enable input for the sprite so that it can interact with the mouse
     playerShip.setInteractive();
     
@@ -22,7 +22,7 @@ function addPlayer(self, playerInfo) {
       scale: { start: 0.03, end: 0.0003 },
     });
   
-    particles.startFollow(playerShip);
+    particles.setDepth(2).startFollow(playerShip);
   
     // Add a pointer move event to update the sprite's rotation
     self.input.on('pointermove', function (pointer) {
@@ -53,7 +53,7 @@ function addPlayer(self, playerInfo) {
 }
 
 function addOtherPlayers(self, playerInfo) {
-    const otherPlayer = self.physics.add.sprite(playerInfo.x, playerInfo.y, 'warrior1').setScale(0.15, 0.15).setDepth(1);
+    const otherPlayer = self.physics.add.sprite(playerInfo.x, playerInfo.y, 'warrior1').setScale(0.15, 0.15).setDepth(3);
     otherPlayer.playerId = playerInfo.playerId;
     
     const particles = self.add.particles(0, 0, 'smoke', {
@@ -63,7 +63,7 @@ function addOtherPlayers(self, playerInfo) {
       blendMode: 'DARKEN',
       scale: { start: 0.03, end: 0.0005 },
     });
-    particles.startFollow(otherPlayer);
+    particles.setDepth(2).startFollow(otherPlayer);
     otherPlayers.add(otherPlayer);
 }
 

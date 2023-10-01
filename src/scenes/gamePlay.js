@@ -23,6 +23,7 @@ class GamePlayScene extends Phaser.Scene {
     this.load.spritesheet('bullet_explosion_spritesheet', 'objects/bullets/shot_explosion_spritesheet.png', { frameWidth: 32, frameHeight: 32 });
     this.load.spritesheet('explosion_spritesheet', 'objects/explosion/explosion_spritesheet.png', { frameWidth: 32, frameHeight: 32 });
     this.load.spritesheet('asteroid_explode', 'objects/asteroids/asteroid_explode.png', { frameWidth: 109.714, frameHeight: 96 });
+    this.load.spritesheet('earth', 'objects/plannets/earth.png', { frameWidth: 96, frameHeight: 96 });
 
     this.load.setBaseURL('http://localhost:8080');
     this.load.image('back', 'background/back.png');
@@ -59,6 +60,15 @@ class GamePlayScene extends Phaser.Scene {
     createAnimation('bullet_explosion', 'bullet_explosion_spritesheet', 5, 1);
     createAnimation('explosion', 'explosion_spritesheet', 11, 1);
     createAnimation('asteroid_explosion', 'asteroid_explode', 11, 0);
+    createAnimation('earth', 'earth', 24, -1);
+
+    // Calculate the center of the map
+    const centerX = this.physics.world.bounds.centerX;
+    const centerY = this.physics.world.bounds.centerY;
+
+    // Create the Earth sprite and set its position
+    const earth = this.add.sprite(centerX, centerY, 'earth').setScale(3).setDepth(1);
+    earth.play('earth');
 
     for (let i = 0; i < 5; i++) {
       for (let j = 0; j < 5; j++) {
@@ -126,12 +136,12 @@ class GamePlayScene extends Phaser.Scene {
     const healthBarBackground = this.add.graphics();
     healthBarBackground.fillStyle(0xffffff, 0.5);
     healthBarBackground.fillRect(10, 35, 170, 15);
-    healthBarBackground.setScrollFactor(0);
+    healthBarBackground.setScrollFactor(0).setDepth(2);
 
     // Create the actual health bar
-    healthBarGraphics = this.add.graphics();
+    healthBarGraphics = this.add.graphics().setDepth(2);
 
-    playerNameTextGraphics = this.add.text(0, 0, "Username").setFontSize(10);
+    playerNameTextGraphics = this.add.text(0, 0, "Username").setFontSize(10).setDepth(2);
     playerCoordinatesTextGraphics = this.add.bitmapText(10, 10, 'nokia16').setScrollFactor(0).setDepth(2);
     healthBarTextGraphics = this.add.bitmapText(190, 35, 'nokia16').setScrollFactor(0).setDepth(2);
 
