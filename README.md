@@ -1,9 +1,9 @@
 
-# Space Explorer Multiplayer
+# Space Explorer
 
 ## Overview
 
-Welcome to the Space Explorer Multiplayer Project, a Phaser 3-based game developed by Dawood Khan Masood. This README provides essential information to get you started with the game.
+Welcome to the Space Explorer Multiplayer project, a Phaser 3-based game developed by Dawood Khan Masood. This README provides essential information to get you started with the game.
 
 ![Game Play](https://github.com/DawoodKMasood/space-explorer/blob/main/screenshot1.png?raw=true)
 
