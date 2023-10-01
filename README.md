@@ -1,5 +1,5 @@
 
-# Space Explorer
+# Space Explorer Multiplayer
 
 ## Overview
 
@@ -72,11 +72,15 @@ The `GamePlayScene` is the core scene where the gameplay of your game takes plac
 -   **Other Players**: Players can see and interact with other online players who are also part of the game. Their movements and actions are synchronized in real-time.
     
 -   **Asteroids**: Asteroids are dynamic game objects that players can interact with. Shooting asteroids can yield rewards or affect gameplay.
+
+![Asteroids](https://github.com/DawoodKMasood/space-explorer/blob/main/screenshot3.png?raw=true)
     
 -   **Health Bar**: A health bar is displayed to show the player's current health status. Health regenerates over time if below the maximum value.
     
 
 ### Power-Ups
+
+![Game Perks](https://github.com/DawoodKMasood/space-explorer/blob/main/screenshot2.png?raw=true)
 
 -   **Bullet Max Distance Perk**: These power-ups enhance the distance bullets can travel. Players can collect them for extended shooting range.
     
@@ -95,6 +99,8 @@ The `GamePlayScene` is the core scene where the gameplay of your game takes plac
 -   **Mini-Map Integration**: The `GamePlayScene` also initializes and integrates the Mini-Map, providing players with an overview of the game environment and the positions of other players.
 
 ### Real-Time Multiplayer
+
+![Multiplayer](https://github.com/DawoodKMasood/space-explorer/blob/main/screenshot4.png?raw=true)
 
 -   **Real-Time Interaction**: The scene is designed for real-time multiplayer interaction, allowing players to see and interact with other players sharing the same game world.
 
