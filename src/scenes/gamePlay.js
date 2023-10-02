@@ -25,7 +25,7 @@ class GamePlayScene extends Phaser.Scene {
     this.load.spritesheet('asteroid_explode', 'objects/asteroids/asteroid_explode.png', { frameWidth: 109.714, frameHeight: 96 });
     this.load.spritesheet('earth', 'objects/plannets/earth.png', { frameWidth: 96, frameHeight: 96 });
 
-    this.load.setBaseURL(process.env.baseURL ? process.env.baseURL : 'http://localhost:8080');
+    this.load.setBaseURL('https://space-explorer-phi.vercel.app');
     this.load.image('back', 'background/back.png');
     this.load.image('warrior1', 'objects/ships/warrior1.png');
     this.load.image('smoke', 'objects/smokes/explosion00.png');
