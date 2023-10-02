@@ -7,8 +7,8 @@
             "use": "@vercel/node"
         },
         {
-        "src": "public/**",
-        "use": "@vercel/static"
+            "src": "public/**",
+            "use": "@vercel/static"
         }
     ],
     "routes": [
