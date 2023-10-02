@@ -16,7 +16,7 @@
         "dest": "server.js"
       },
       {
-        "src": "/public/(.*)",
+        "src": "/public/(.+\\.[a-z]+)$",
         "dest": "/$1"
       }
     ]
