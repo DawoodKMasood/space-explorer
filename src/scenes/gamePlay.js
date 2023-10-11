@@ -24,7 +24,6 @@ class GamePlayScene extends Phaser.Scene {
     this.load.spritesheet('explosion_spritesheet', 'objects/explosion/explosion_spritesheet.png', { frameWidth: 32, frameHeight: 32 });
     this.load.spritesheet('asteroid_explode', 'objects/asteroids/asteroid_explode.png', { frameWidth: 109.714, frameHeight: 96 });
     this.load.spritesheet('earth', 'objects/plannets/earth.png', { frameWidth: 96, frameHeight: 96 });
-
     this.load.setBaseURL('https://space-explorer-8vuj.onrender.com');
     this.load.image('back', 'background/back.png');
     this.load.image('warrior1', 'objects/ships/warrior1.png');
@@ -33,7 +32,6 @@ class GamePlayScene extends Phaser.Scene {
     this.load.image('bullet_firing_speed_perk', 'objects/skills/Skillicon1_22.png');
     this.load.image('asteroid_1', 'objects/asteroids/asteroid_1.png');
     this.load.image('asteroid_2', 'objects/asteroids/asteroid_2.png');
-
     this.load.bitmapFont('nokia16', 'fonts/nokia16.png', 'fonts/nokia16.xml');
   }
 
